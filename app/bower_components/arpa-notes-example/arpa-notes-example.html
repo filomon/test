@@ -1,0 +1,86 @@
+<link rel="import" href="../arpa-app-elements/arpa-elements.html">
+<link rel="import" href="../polymerfire/polymerfire.html">
+<link rel="import" href="../iron-pages/iron-pages.html">
+<link rel="import" href="../app-route/app-location.html">
+<link rel="import" href="../app-route/app-route.html">
+<link rel="import" href="arpa-note-list/arpa-note-list.html">
+<link rel="import" href="arpa-note-form/arpa-note-form.html">
+
+<dom-module id="arpa-notes-example">
+    <template>
+        <style include="arpa-app-shared-styles"></style>
+        <app-route
+                route="{{route}}"
+                pattern="/:view"
+                data="{{routeData}}"
+                tail="{{subroute}}"></app-route>
+        <iron-pages selected="{{routeData.view}}" attr-for-selected="name">
+            <arpa-note-list id="list"
+                            name="list"
+                            route="{{route}}"
+                            user="{{user}}"
+                            signed-in="{{signedIn}}"
+                            online="{{online}}"
+                            on-change-view="changeView"
+                            hidden$="[[!signedIn]]">
+            </arpa-note-list>
+            <arpa-note-form id="form"
+                            name="form"
+                            mode="{{mode}}"
+                            noteId="{{noteId}}"
+                            route="{{route}}"
+                            user="{{user}}"
+                            signed-in="{{signedIn}}"
+                            online="{{online}}"
+                            on-change-view="changeView"
+                            hidden$="[[!signedIn]]">
+            </arpa-note-form>
+        </iron-pages>
+    </template>
+    <script>
+        Polymer({
+            is: 'arpa-notes-example',
+
+            properties: {
+                mode: {
+                    type: String,
+                    value: "NONE",
+                    notify: true
+                },
+                noteId: {
+                    type: String,
+                    value: null,
+                    notify: true
+                }
+            },
+
+            observers: [
+                '_setupDefaultRoute(route)'
+            ],
+
+            behaviors: [Polymer.ArpaMessages, Polymer.ArpaCore],
+
+            _setupDefaultRoute: function(_route){
+              if (!this.get("routeData.view")) {
+                  this.set("routeData.view", "list");
+              }
+            },
+
+            changeView: function(_event, _params) {
+                console.log("_params", _params);
+//                this.noteId = _params.noteId;
+//                this.mode = _params.mode;
+                if (_params.view === "list") {
+                    if (this.$.list.$.query && this.$.list.$.query.refresh) {
+                        this.$.list.$.query.refresh().then(function() {
+                        }.bind(this));
+                    }
+                }
+                if (_params.view === "form") {
+                    this.$.form.setupData(_params.mode, _params.noteId);
+                }
+                this.set("routeData.view", _params.view);
+            }
+        });
+    </script>
+</dom-module>

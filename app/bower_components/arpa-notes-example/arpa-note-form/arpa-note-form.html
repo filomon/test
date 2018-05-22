@@ -1,0 +1,180 @@
+<link rel="import" href="../../arpa-app-elements/arpa-elements.html">
+<link rel="import" href="../../polymerfire/polymerfire.html">
+<link rel="import" href="../../paper-input/all-imports.html">
+<link rel="import" href="../../paper-button/paper-button.html">
+<link rel="import" href="../../arpa-app-elements/arpa-common-behaviors.html">
+
+<dom-module id="arpa-note-form">
+    <template>
+        <style include="arpa-app-shared-styles"></style>
+        <firebase-query id="query"
+                        app-name="arpa-app"
+                        path="[[editableNotePath]]"
+                        data="{{note}}"></firebase-query>
+        <firebase-document id="document"
+                           app-name="arpa-app"
+                           path="/notes/user_[[user.uid]]"
+                           data="{{note}}"></firebase-document>
+
+        <div class="page-content">
+            <h3>[[getPageTitle(mode)]]</h3>
+            <div class="form-content">
+                <paper-input id="titleField"
+                             value="{{note.title}}"
+                             error-message="{{es.message.note_title_error}}"
+                             label="[[es.label.note_title]]"
+                             char-counter="true"
+                             maxlength="50"
+                             required="true"
+                             auto-validate="true"></paper-input>
+                <br>
+                <paper-textarea id="bodyField"
+                                value="{{note.body}}"
+                                error-message="{{es.message.note_body_error}}"
+                                label="[[es.label.note_body]]"
+                                char-counter="true"
+                                maxlength="500"
+                                auto-validate="true">
+                </paper-textarea>
+            </div>
+            <div class="page-buttons">
+                <paper-button on-tap="delete" hidden$="[[!isEditMode(mode)]]">{{es.label.delete}}</paper-button>
+                <paper-button on-tap="save" hidden$="[[isNoneMode(mode)]]">{{es.label.save}}</paper-button>
+                <paper-button on-tap="cancel" hidden$="[[isNoneMode(mode)]]">{{es.label.cancel}}</paper-button>
+            </div>
+        </div>
+    </template>
+    <script>
+        Polymer({
+            is: 'arpa-note-form',
+
+            properties: {
+                mode: {
+                    type: String,
+//                    ["NONE", "CREATE", "EDIT"]
+                    value: "NONE",
+                    notify: true
+                },
+                user: {
+                    type: Object,
+                    value: {},
+                    notify: true
+                },
+                noteId: {
+                    type: String,
+                    value: null,
+                    notify: true
+                },
+                note: {
+                    type: Object,
+                    value: {
+                        title: "",
+                        body: ""
+                    },
+                    reflectToAttribute: true,
+                    notify: true
+                },
+                editableNotePath: {
+                    type: String,
+                    value: null,
+                    notify: true
+                }
+            },
+
+            behaviors: [Polymer.ArpaMessages, Polymer.ArpaCore],
+
+            observers: [
+//                'setupData(mode, noteId)'
+            ],
+
+            isNoneMode: function (_mode) {
+                return !_mode || _mode === "NONE";
+            },
+
+            isEditMode: function (_mode) {
+                return _mode === "EDIT";
+            },
+
+            isAddMode: function (_mode) {
+                return _mode === "ADD";
+            },
+
+            getPageTitle: function (_mode) {
+                return this.isEditMode(_mode) ? this.es.message.note_edit_title :  this.isAddMode(_mode) ? this.es.message.note_add_title : "";
+            },
+
+            setupData: function (_mode, _noteId) {
+                this.mode = _mode;
+                this.noteId = _noteId;
+                console.log("_mode", _mode);
+                console.log("_noteId", _noteId);
+                console.log("_noteId",this.noteId);
+                //Setup default values
+                this.set("note", {title: "", body: ""});
+                if (this.isNoneMode(_mode)) {
+                    this.editableNotePath = "";
+                    this.$.document.reset();
+                } else if (this.isEditMode(_mode)) {
+                    this.editableNotePath = this.toEditableNotePath(_noteId);
+
+                    this.$.document.transactionsComplete.then(function() {
+                        this.$.editor.open(noteElement);
+                    }.bind(this));
+
+                    if (this.$.query && this.$.query.refresh) {
+                        this.$.query.refresh().then(function() {
+                            this.setPropertiesFromEntity("note", ["$key", "title", "body"]);
+                            this.cleanFields(["titleField", "bodyField"]);
+                        }.bind(this));
+                    }
+                } else {
+                    this.editableNotePath = "";
+                    this.$.document.reset().then(function() {
+                        this.setPropertiesFromEntity("note", ["title", "body"]);
+                        this.cleanFields(["titleField", "bodyField"]);
+                    }.bind(this));
+                }
+                return Promise.resolve();
+            },
+
+            delete: function (_event) {
+                if (!this.$.document.isNew) {
+                    this.$.document.destroy().then(function () {
+                        this.$.document.reset();
+                        this.fire('change-view', {mode: "NONE", noteId: null, view:"list"});
+                    }.bind(this));
+
+                }
+                return Promise.resolve();
+            },
+
+            save: function (_event) {
+                console.log("save", _event);
+                if (this.validateFields(["titleField", "bodyField"])) {
+                    this.pushPropertiesToEntity("note", ["$key", "title", "body"]);
+                    return this.$.document.saveValue(this.notesPath).then(function () {
+                        this.$.document.reset();
+                        this.fire('change-view', {mode: "NONE", noteId: null, view:"list"});
+                    }.bind(this));
+                }
+                return Promise.resolve();
+            },
+
+            cancel: function (_event) {
+                this.fire('change-view', {mode: "NONE", noteId: null, view:"list"});
+            },
+
+            get notesPath() {
+                return '/notes/user_' + this.user.uid;
+            },
+
+            toEditableNotePath: function (_editableNoteId) {
+                return this.notesPath + '/' + _editableNoteId;
+            },
+
+            get isEditable() {
+                return this.online;
+            }
+        });
+    </script>
+</dom-module>

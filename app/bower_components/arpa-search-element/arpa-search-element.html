@@ -1,0 +1,18 @@
+<link rel="import" href="../app-storage/app-indexeddb-mirror/app-indexeddb-mirror.html">
+<link rel="import" href="../polymerfire/polymerfire.html">
+<link rel="import" href="../paper-input/paper-input.html">
+
+<dom-module id="arpa-search-element">
+    <template>
+        <div>
+            <paper-input always-float-label label="Floating label"></paper-input>
+        </div>
+    </template>
+    <script>
+        Polymer({
+            is: 'arpa-search-element',
+
+            behaviors: [Polymer.ArpaAppBehavior]
+        });
+    </script>
+</dom-module>

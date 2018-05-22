@@ -1,0 +1,104 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<script>
+    (function () {
+        'use strict';
+        /**
+         * @polymerBehavior Polymer.ArpaMessages
+         */
+        Polymer.ArpaMessages = {
+            properties: {
+                es: {
+                    type: Object,
+                    value: {
+                        label: {
+                            save: "Guardar",
+                            delete: "Eliminar",
+                            cancel: "Cancel",
+                            note_title: "Titulo",
+                            note_body: "Contenido"
+                        },
+                        message: {
+                            note_list_title: "Notes",
+                            note_add_title: "Add New Note",
+                            note_edit_title: "Edit Note",
+                            note_title_error: "Titulo es invalido.",
+                            note_body_error: "Contenido es invalido."
+                        }
+                    }
+                }
+            }
+        };
+        /**
+         * @polymerBehavior Polymer.ArpaCore
+         */
+        Polymer.ArpaCore = {
+            properties: {
+                user: {
+                    type: Object,
+                    value: {},
+                    notify: true
+                },
+                signedIn: {
+                    type: Boolean,
+                    value: false,
+                    notify: true
+                },
+                online: {
+                    type: Boolean,
+                    value: false,
+                    notify: true
+                }
+            },
+            validateFields: function (_fieldIds) {
+                var valid = true;
+                for (var i = 0; i < _fieldIds.length; i++) {
+                    this.$[_fieldIds[i]].validate();
+                    if (this.$[_fieldIds[i]].invalid) {
+                        valid = false;
+                    }
+                }
+                return valid;
+            },
+            cleanFields: function (_fieldIds) {
+                for (var i = 0; i < _fieldIds.length; i++) {
+                    console.log("this.$[_fieldIds[i]]", this.$[_fieldIds[i]]);
+                    console.log("this.$[_fieldIds[i]].invalid", this.$[_fieldIds[i]].invalid);
+                    if (this.$[_fieldIds[i]]) {
+                        if (this.$[_fieldIds[i]].clear) {
+                            this.$[_fieldIds[i]].clear();
+                        }
+                        this.$[_fieldIds[i]].invalid = false;
+                    } else {
+                        console.log("Field not found: " + _fieldIds[i]);
+                    }
+                    console.log("this.$[_fieldIds[i]].invalid", this.$[_fieldIds[i]].invalid);
+                }
+            },
+            setPropertiesFromEntity: function (_objectName, _propertyNames) {
+                var jsonObject = this.get(_objectName);
+                for (var i = 0; i < _propertyNames.length; i++) {
+                    var propertyName = _propertyNames[i];
+                    var propertyValue = jsonObject[propertyName];
+//                    if (typeof propertyValue !== 'undefined')
+                    {
+                        var propertyPath = _objectName + "." + propertyName;
+                        console.log("propertyPath: ", propertyPath, "propertyValue: ", propertyValue)
+                        this.set(propertyPath, propertyValue);
+                    }
+                }
+            },
+            pushPropertiesToEntity: function (_objectName, _propertyNames) {
+                var jsonObject = this.get(_objectName);
+                for (var i = 0; i < _propertyNames.length; i++) {
+                    var propertyName = _propertyNames[i];
+                    var propertyPath = _objectName + "." + propertyName;
+                    var propertyValue = this.get(propertyPath);
+                    if (typeof propertyValue !== 'undefined') {
+                        jsonObject[propertyName] = propertyValue;
+                    }
+                }
+            }
+        };
+    })();
+</script>
